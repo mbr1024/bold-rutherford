@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Remix AI - 智能视频创作工作台</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <header class="top-nav">
+    <div class="nav-inner">
+      <div class="nav-brand">
+        <div class="brand-logo">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+          </svg>
+        </div>
+        <span class="brand-title">Video Remix <span class="brand-ai">AI</span></span>
+      </div>
+
+      <div class="nav-status">
+        <div class="status-chip online">
+          <span class="status-dot"></span>
+          <span id="sys-status">就绪</span>
+        </div>
+        <div class="status-chip model">
+          <span id="model-tag">Gemini 3.7 Flash</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="content-grid">
+
+      <!-- LEFT: Controls Panel -->
+      <aside class="sidebar">
+
+        <!-- Upload Section -->
+        <div class="card">
+          <div class="card-title">
+            <span>📁 素材导入</span>
+          </div>
+
+          <div class="upload-zone" id="dropzone">
+            <div class="upload-inner">
+              <div class="upload-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <div class="upload-text" id="dropzone-label">拖拽视频至此区域，或点击上传</div>
+              <div class="upload-hint">支持 MP4, MOV, MKV, WebM</div>
+              <input type="file" id="file-input" accept="video/*" style="display: none;">
+            </div>
+          </div>
+
+          <!-- Path Input -->
+          <div class="form-group">
+            <label class="form-label">本机路径</label>
+            <input type="text" class="form-input" id="video-path-input" placeholder="/Users/.../video.mp4">
+          </div>
+
+          <!-- Source info (hidden until selected) -->
+          <div class="source-info" id="source-info-card" style="display: none;">
+            <div class="info-row">
+              <span class="info-label">文件</span>
+              <span class="info-value" id="source-filename">-</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">状态</span>
+              <span class="info-value text-accent" id="source-duration">已就绪</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div class="card">
+          <div class="card-title">
+            <span>⚙️ 创作设置</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">AI 模型</label>
+            <select class="form-select" id="provider-select">
+              <option value="gemini_relay">Gemini 3.7 Flash（视频原生直传）</option>
+              <option value="dashscope">通义千问 Qwen-VL（阿里云百炼）</option>
+            </select>
+          </div>
+
+          <div class="toggle-row">
+            <label class="toggle-switch">
+              <input type="checkbox" id="golden-hook-toggle" checked>
+              <span class="toggle-track"></span>
+            </label>
+            <span class="toggle-text">⚡ 黄金 3 秒高潮前置</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-group">
+          <button class="btn-primary" id="btn-process">
+            <span class="btn-label">🚀 开始智能剪辑</span>
+          </button>
+          <button class="btn-secondary" id="btn-demo">
+            <span class="btn-label">▶ 体验测试样片</span>
+          </button>
+        </div>
+
+        <!-- Pipeline Progress -->
+        <div class="card">
+          <div class="card-title">
+            <span>📋 处理进度</span>
+            <span class="progress-badge" id="pipeline-status-pill">
+              <span class="status-dot" id="pipeline-dot"></span>
+              <span id="pipeline-status-text">等待开始</span>
+            </span>
+          </div>
+
+          <div class="step-list">
+            <div class="step-item" id="stage-probe">
+              <div class="step-num">1</div>
+              <div class="step-name">源片探测</div>
+            </div>
+            <div class="step-item" id="stage-proxy">
+              <div class="step-num">2</div>
+              <div class="step-name">代理压制</div>
+            </div>
+            <div class="step-item" id="stage-ai">
+              <div class="step-num">3</div>
+              <div class="step-name">AI 审片</div>
+            </div>
+            <div class="step-item" id="stage-draft">
+              <div class="step-num">4</div>
+              <div class="step-name">拼接导出</div>
+            </div>
+          </div>
+
+          <!-- Console Log -->
+          <div class="console-box">
+            <div class="console-header">
+              <span>控制台</span>
+              <button class="btn-text" onclick="clearLogs()">清空</button>
+            </div>
+            <div class="console-body" id="log-console">
+              <div class="log-line muted">&gt; 系统就绪，等待任务...</div>
+            </div>
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- RIGHT: Result Area -->
+      <section class="result-area">
+
+        <!-- Placeholder -->
+        <div class="empty-state" id="placeholder-view">
+          <div class="empty-icon">🎬</div>
+          <div class="empty-title">准备开始创作</div>
+          <div class="empty-desc">
+            在左侧上传视频素材，AI 将自动识别高价值镜头完成智能剪辑，并生成剪映工程文件。
+          </div>
+          <button class="btn-primary compact" onclick="document.getElementById('btn-demo').click()">
+            ⚡ 快速体验
+          </button>
+        </div>
+
+        <!-- Result View -->
+        <div id="result-view" style="display: none;">
+
+          <!-- Preview Card -->
+          <div class="card">
+            <div class="card-title">
+              <span>🎬 成片预览</span>
+              <div class="metric-row">
+                <span class="metric-tag" id="metric-duration">-</span>
+                <span class="metric-tag green" id="metric-ratio">-</span>
+                <span class="metric-tag red" id="metric-discarded" style="display:none"></span>
+              </div>
+            </div>
+
+            <div class="result-title-area">
+              <h2 class="result-title" id="result-title">未命名视频</h2>
+              <p class="result-hook" id="result-hook"></p>
+            </div>
+
+            <!-- Video Player -->
+            <div class="player-wrap">
+              <video id="video-player" controls playsinline preload="auto"></video>
+            </div>
+
+            <!-- Timeline -->
+            <div class="timeline-section">
+              <div class="timeline-header">
+                <span class="timeline-label">镜头轨道</span>
+                <div class="timeline-legend">
+                  <span class="legend-item"><span class="legend-dot base"></span> 原片</span>
+                  <span class="legend-item"><span class="legend-dot active"></span> 提取</span>
+                </div>
+              </div>
+              <div class="timeline-track-container" id="timeline-container">
+                <div class="timeline-ticks" id="timeline-ticks"></div>
+                <div class="timeline-base-track" id="timeline-base"></div>
+                <div class="timeline-playhead" id="timeline-playhead"></div>
+              </div>
+              <div class="timeline-tooltip" id="timeline-tooltip"></div>
+            </div>
+
+            <!-- Export -->
+            <div class="export-row">
+              <div class="export-info">
+                <span class="export-icon">✂️</span>
+                <div>
+                  <div class="export-label">剪映工程草稿</div>
+                  <div class="export-path" id="draft-path-text">-</div>
+                </div>
+              </div>
+              <button class="btn-text" id="btn-copy" onclick="copyDraftPath()">
+                📋 复制路径
+              </button>
+            </div>
+          </div>
+
+          <!-- Golden Hook Card -->
+          <div id="golden-hook-card" class="hook-card" style="display:none">
+            <div class="hook-header">
+              <span class="hook-badge">⚡ 黄金 3 秒</span>
+              <span class="hook-technique" id="gh-technique">高潮前置</span>
+              <button class="btn-sm" onclick="seekGoldenHook()">▶ 试听</button>
+            </div>
+            <div class="hook-punchline" id="gh-punchline"></div>
+            <div class="hook-meta">
+              <span class="hook-time" id="gh-timecode"></span>
+              <span class="hook-caption" id="gh-caption"></span>
+            </div>
+          </div>
+
+          <!-- Shot List -->
+          <div class="card">
+            <div class="card-title">
+              <span>📐 镜头拆解</span>
+              <span class="count-badge" id="clip-count-badge">0 个镜头</span>
+            </div>
+            <div class="shot-list" id="shot-list"></div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

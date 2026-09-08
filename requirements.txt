@@ -1,0 +1,13 @@
+# Video Remix MVP Dependencies
+
+# Core testing
+pytest>=7.0.0
+
+# Optional: LLM provider
+openai>=1.0.0
+
+# Optional: Local fast Whisper ASR (requires PyTorch, optional if using API or subtitle file)
+# faster-whisper>=1.0.0
+
+# Optional: Audio energy and signal processing (Phase 2)
+# librosa>=0.10.0

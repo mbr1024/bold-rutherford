@@ -1,0 +1,20 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+
+# Environments & Secrets
+.venv/
+env/
+venv/
+ENV/
+.env
+.env.*
+*.env
+
+# Scratch & output directories
+.video_remix_work/
+output/
+demo_source.mp4
+demo_source.srt
